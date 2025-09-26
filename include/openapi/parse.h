@@ -9,8 +9,8 @@
 #include "utl/parser/arg_parser.h"
 #include "utl/verify.h"
 
+#include "openapi/bad_request_exception.h"
 #include "openapi/date_time.h"
-#include "openapi/missing_param_exception.h"
 
 namespace openapi {
 
@@ -60,7 +60,7 @@ T parse_param(boost::urls::params_view const& params,
   } else {
     if constexpr (!is_optional_v<T>) {
       if (!default_value.has_value() && !allow_missing) {
-        throw missing_param_exception{name};
+        throw bad_request_exception{name};
       }
     }
   }
