@@ -60,7 +60,7 @@ T parse_param(boost::urls::params_view const& params,
   } else {
     if constexpr (!is_optional_v<T>) {
       if (!default_value.has_value() && !allow_missing) {
-        throw bad_request_exception{name};
+        throw bad_request_exception{fmt::format("missing parameter: {}", name)};
       }
     }
   }
