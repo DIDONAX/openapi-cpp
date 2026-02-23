@@ -14,10 +14,16 @@ date_time_t tag_invoke(json::value_to_tag<date_time_t>, json::value const&);
 void tag_invoke(json::value_from_tag, json::value&, date_time_t const);
 
 template <class T>
-void extract_member(json::object const& o, T& t, json::string_view key) {
+void extract_member(json::object const& o,
+                    T& t,
+                    json::string_view key,
+                    bool const has_default_value = false) {
   auto const it = o.find(key);
   if (it == o.end()) {
     [[unlikely]];
+    if (has_default_value) {
+      return;
+    }
     throw utl::fail("key {} not found in {}", key, json::serialize(o));
   }
   t = json::value_to<T>(it->value());
