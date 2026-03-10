@@ -495,7 +495,12 @@ bool {}::operator>=({} const&) const = default;
       for (auto const& p : schema["properties"]) {
         auto const member_name = p.first.as<std::string_view>();
         source << "    openapi::extract_member(jv.as_object(), v."
-               << member_name << "_, \"" << member_name << "\");\n";
+               << member_name << "_, \"" << member_name << "\"";
+        if (auto const default_value = p.second["default"];
+            default_value.IsDefined()) {
+          source << ", true";
+        }
+        source << ");\n";
       }
       source << "    return v;\n"
                 "  }\n\n";
