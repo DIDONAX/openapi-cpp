@@ -17,6 +17,9 @@ struct offset_time {
 
   friend std::ostream& operator<<(std::ostream&, offset_time const&);
 
+  std::chrono::sys_seconds::rep get_unixtime_seconds() const {
+    return time_.time_since_epoch().count();
+  }
   operator std::chrono::sys_seconds() const { return time_; }
   std::chrono::sys_seconds operator*() const { return time_; }
   std::chrono::sys_seconds* operator->() { return &time_; }
