@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <ostream>
+#include <ranges>
 
 #include "utl/enumerate.h"
 
@@ -108,7 +109,7 @@ std::string_view to_cpp(type const t) {
 
 struct indent {
   explicit indent(int indent, char separator = ',')
-      : indent_{indent}, separator_{separator} {}
+      : separator_{separator}, indent_{indent} {}
 
   void operator()(std::ostream& out) {
     if (!first_ && separator_ != '\0') {
@@ -314,10 +315,33 @@ void gen_member_init(YAML::Node const& root,
   out << ", allow_missing)}";
 }
 
+void gen_member_init_from_seg(YAML::Node const& root,
+                              YAML::Node const& x,
+                              std::size_t idx,
+                              std::ostream& out) {
+  auto const schema = x["schema"];
+  auto const name = x["name"].as<std::string_view>();
+  auto const type = get_type(root, name, schema, true);
+  out << "  " << name << "_{::openapi::parse_segment<" << type << ">(segs, \""
+      << name << "\", " << idx << ")}";
+}
+
 void write_params(YAML::Node const& root,
+                  YAML::Node const& path,
                   YAML::Node const& n,
                   std::ostream& header,
                   std::ostream& source) {
+  const auto p = path.as<std::string_view>();
+  auto segs = p | std::views::split('/');
+  auto seg_idx = std::unordered_map<std::string_view, std::size_t>{};
+
+  for (auto const& [i, seg] : segs | std::views::enumerate) {
+    auto sv = std::string_view{seg.begin(), seg.end()};
+    if (sv.starts_with('{')) sv.remove_prefix(1);
+    if (sv.ends_with('}')) sv.remove_suffix(1);
+    seg_idx.emplace(sv, i - 1);
+  }
+
   for (auto const& p : n["parameters"]) {
     auto const name = p["name"].as<std::string_view>();
     auto const items = p["schema"]["items"];
@@ -333,12 +357,14 @@ void write_params(YAML::Node const& root,
   header << "struct " << id << " {\n";
   header << "  explicit " << id << "();\n";
   header << "  explicit " << id
-         << "(boost::urls::params_view const&, bool allow_missing = false);\n";
+         << "(boost::urls::params_view const&, boost::urls::segments_view "
+            "const& = {}, bool allow_missing = false);\n";
   header << "  boost::urls::url to_url(std::string_view path) const;\n";
 
   source << id << "::" << id << "() = default;\n";
   source << id << "::" << id
-         << "(boost::urls::params_view const& params, bool allow_missing)";
+         << "(boost::urls::params_view const& params, "
+            "boost::urls::segments_view const& segs, bool allow_missing)";
 
   auto const parameters = n["parameters"];
   if (parameters.IsDefined() && parameters.size() != 0) {
@@ -346,7 +372,12 @@ void write_params(YAML::Node const& root,
     auto ind = indent{2};
     for (auto const& p : parameters) {
       ind(source);
-      gen_member_init(root, p, is_required(p), source);
+      if (p["in"].IsDefined() && p["in"].as<std::string_view>() == "path") {
+        auto const idx = seg_idx.at(p["name"].as<std::string_view>());
+        gen_member_init_from_seg(root, p, idx, source);
+      } else {
+        gen_member_init(root, p, is_required(p), source);
+      }
     }
   }
   source << "\n  {}\n\n";
@@ -357,6 +388,9 @@ void write_params(YAML::Node const& root,
     source << "  auto u = boost::urls::url{path};\n";
     source << "  auto default_val = " << id << "{};\n";
     for (auto const& p : parameters) {
+      if (p["in"].IsDefined() && p["in"].as<std::string_view>() == "path") {
+        continue;
+      }
       auto const name = p["name"].as<std::string_view>();
       auto const schema = p["schema"];
       auto const has_default = schema["default"].IsDefined();
@@ -402,7 +436,9 @@ void write_params(YAML::Node const& root,
 
   for (auto const& p : n["parameters"]) {
     auto const name = p["name"].as<std::string_view>();
-    gen_member(root, name, is_required(p), p["schema"], header);
+    auto const in_path =
+        p["in"].IsDefined() && p["in"].as<std::string_view>() == "path";
+    gen_member(root, name, in_path || is_required(p), p["schema"], header);
   }
   header << "};\n\n";
 }
@@ -560,7 +596,7 @@ void write_types(YAML::Node const& root,
 
   for (auto const& path : root["paths"]) {
     for (auto const& method : path.second) {
-      write_params(root, method.second, header, source);
+      write_params(root, path.first, method.second, header, source);
 
       for (auto const& response : method.second["responses"]) {
         gen_type(method.second["operationId"].as<std::string>() + "_response",

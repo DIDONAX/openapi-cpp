@@ -1,6 +1,7 @@
 #pragma once
 
 #include "boost/url/params_view.hpp"
+#include "boost/url/segments_view.hpp"
 
 #include <sstream>
 #include <string_view>
@@ -65,6 +66,22 @@ T parse_param(boost::urls::params_view const& params,
     }
   }
   return default_value.has_value() ? T{*default_value} : T{};
+}
+
+template <typename T>
+T parse_segment(boost::urls::segments_view const& segs,
+                std::string_view name,
+                std::size_t idx) {
+  auto it = segs.begin();
+  if (idx < segs.size()) {
+    std::advance(it, idx);
+    auto v = T{};
+    parse(*it, v);
+    return v;
+  } else {
+    throw bad_request_exception{
+        fmt::format("missing segment parameter: {}", name)};
+  }
 }
 
 }  // namespace openapi

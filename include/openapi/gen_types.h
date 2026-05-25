@@ -50,7 +50,14 @@ void gen_member_init(YAML::Node const& root,
                      std::ostream& header,
                      std::ostream& source);
 
+void gen_member_init_from_seg(YAML::Node const& root,
+                              YAML::Node const& x,
+                              std::size_t seg_idx,
+                              std::ostream& header,
+                              std::ostream& source);
+
 void write_params(YAML::Node const& root,
+                  YAML::Node const& path,
                   YAML::Node const&,
                   std::ostream& header,
                   std::ostream& source);
