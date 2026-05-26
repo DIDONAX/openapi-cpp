@@ -337,8 +337,12 @@ void write_params(YAML::Node const& root,
 
   for (auto const& [i, seg] : segs | std::views::enumerate) {
     auto sv = std::string_view{seg.begin(), seg.end()};
-    if (sv.starts_with('{')) sv.remove_prefix(1);
-    if (sv.ends_with('}')) sv.remove_suffix(1);
+    if (sv.starts_with('{')) {
+      sv.remove_prefix(1);
+    }
+    if (sv.ends_with('}')) {
+      sv.remove_suffix(1);
+    }
     seg_idx.emplace(sv, i - 1);
   }
 
