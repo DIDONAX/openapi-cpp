@@ -332,10 +332,10 @@ void write_params(YAML::Node const& root,
                   std::ostream& header,
                   std::ostream& source) {
   const auto p = path.as<std::string_view>();
-  auto segs = p | std::views::split('/');
   auto seg_idx = std::unordered_map<std::string_view, std::size_t>{};
 
-  for (auto const& [i, seg] : segs | std::views::enumerate) {
+  for (auto const& [i, seg] :
+       p | std::views::split('/') | std::views::enumerate) {
     auto sv = std::string_view{seg.begin(), seg.end()};
     if (sv.starts_with('{')) {
       sv.remove_prefix(1);
@@ -343,7 +343,7 @@ void write_params(YAML::Node const& root,
     if (sv.ends_with('}')) {
       sv.remove_suffix(1);
     }
-    seg_idx.emplace(sv, i - 1);
+    seg_idx.emplace(sv, i == 0 ? i : i - 1);
   }
 
   for (auto const& p : n["parameters"]) {
@@ -370,13 +370,17 @@ void write_params(YAML::Node const& root,
          << "(boost::urls::params_view const& params, "
             "boost::urls::segments_view const& segs, bool allow_missing)";
 
+  auto in_path = [](const auto& p) {
+    return p["in"].IsDefined() && p["in"].as<std::string_view>() == "path";
+  };
+
   auto const parameters = n["parameters"];
   if (parameters.IsDefined() && parameters.size() != 0) {
     source << " :";
     auto ind = indent{2};
     for (auto const& p : parameters) {
       ind(source);
-      if (p["in"].IsDefined() && p["in"].as<std::string_view>() == "path") {
+      if (in_path(p)) {
         auto const idx = seg_idx.at(p["name"].as<std::string_view>());
         gen_member_init_from_seg(root, p, idx, source);
       } else {
@@ -392,7 +396,7 @@ void write_params(YAML::Node const& root,
     source << "  auto u = boost::urls::url{path};\n";
     source << "  auto default_val = " << id << "{};\n";
     for (auto const& p : parameters) {
-      if (p["in"].IsDefined() && p["in"].as<std::string_view>() == "path") {
+      if (in_path(p)) {
         continue;
       }
       auto const name = p["name"].as<std::string_view>();
@@ -440,9 +444,7 @@ void write_params(YAML::Node const& root,
 
   for (auto const& p : n["parameters"]) {
     auto const name = p["name"].as<std::string_view>();
-    auto const in_path =
-        p["in"].IsDefined() && p["in"].as<std::string_view>() == "path";
-    gen_member(root, name, in_path || is_required(p), p["schema"], header);
+    gen_member(root, name, in_path(p) || is_required(p), p["schema"], header);
   }
   header << "};\n\n";
 }

@@ -1,17 +1,10 @@
 #include "gtest/gtest.h"
 
-#include "openapi/bad_request_exception.h"
-#include "yaml-cpp/yaml.h"
-
-#include "cista/hash.h"
-
 #include "boost/json.hpp"
 #include "boost/url.hpp"
 
-#include "utl/verify.h"
-
+#include "openapi/bad_request_exception.h"
 #include "openapi/gen_types.h"
-#include "openapi/json.h"
 
 #include "pet-api/pet-api.h"
 

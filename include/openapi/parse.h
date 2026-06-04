@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 
+#include "bad_request_exception.h"
 #include "utl/parser/arg_parser.h"
 #include "utl/verify.h"
 
@@ -72,16 +73,15 @@ template <typename T>
 T parse_segment(boost::urls::segments_view const& segs,
                 std::string_view name,
                 std::size_t idx) {
-  auto it = segs.begin();
   if (idx < segs.size()) {
+    auto it = segs.begin();
     std::advance(it, idx);
     auto v = T{};
     parse(*it, v);
     return v;
-  } else {
-    throw bad_request_exception{
-        fmt::format("missing segment parameter: {}", name)};
   }
+  throw bad_request_exception{
+      fmt::format("missing segment parameter: {}", name)};
 }
 
 }  // namespace openapi
