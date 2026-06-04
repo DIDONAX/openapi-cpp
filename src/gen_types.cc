@@ -36,7 +36,9 @@ void write_prelude(std::string_view path_to_header,
 #include "openapi/json.h"
 #include "openapi/parse.h"
 
-namespace std { template <typename T>
+namespace std {
+
+template <typename T>
 std::ostream& operator<<(std::ostream& out, std::vector<T> const& v) {
   auto first = true;
   for (auto const& x : v) {
