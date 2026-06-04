@@ -4,13 +4,12 @@
 #include <ostream>
 #include <string_view>
 
+#include "utl/to_vec.h"
 #include "utl/verify.h"
 
 #include "yaml-cpp/yaml.h"
 
 #include "cista/hash.h"
-
-#include "utl/to_vec.h"
 
 namespace openapi {
 

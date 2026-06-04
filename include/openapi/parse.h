@@ -1,13 +1,12 @@
 #pragma once
 
-#include "boost/url/params_view.hpp"
-#include "boost/url/segments_view.hpp"
-
 #include <sstream>
 #include <string_view>
 #include <vector>
 
-#include "bad_request_exception.h"
+#include "boost/url/params_view.hpp"
+#include "boost/url/segments_view.hpp"
+
 #include "utl/parser/arg_parser.h"
 #include "utl/verify.h"
 

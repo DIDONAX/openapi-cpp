@@ -36,9 +36,7 @@ void write_prelude(std::string_view path_to_header,
 #include "openapi/json.h"
 #include "openapi/parse.h"
 
-namespace std {
-
-template <typename T>
+namespace std { template <typename T>
 std::ostream& operator<<(std::ostream& out, std::vector<T> const& v) {
   auto first = true;
   for (auto const& x : v) {
@@ -371,7 +369,8 @@ void write_params(YAML::Node const& root,
             "boost::urls::segments_view const& segs, bool allow_missing)";
 
   auto in_path = [](const auto& p) {
-    return p["in"].IsDefined() && p["in"].as<std::string_view>() == "path";
+    return p["in"].IsDefined() &&
+           p["in"].template as<std::string_view>() == "path";
   };
 
   auto const parameters = n["parameters"];
